@@ -2,16 +2,6 @@ const { Product } = require("../model/product");
 
 exports.createProduct = async (req, res) => {
   const product = new Product(req.body);
-
-  // this is not supported by mongoose instead we have to use async await
-  // product.save((err,doc)=>{
-  //     console.log({err,doc});
-  //     if(err){
-  //         res.status(400).json(err);
-  //     }else{
-  //         res.status(201).json(doc);
-  //     }
-  // })
   try {
     const doc = await product.save();
     res.status(201).json(doc);
@@ -27,7 +17,6 @@ exports.fetchAllProducts = async (req, res) => {
   } 
   let query = Product.find(condition);
   let totalProducts = Product.find({});
-  console.log("from router",req.query);
   try {
     if (req.query.category) {
       query = query.find({ category: req.query.category });
@@ -58,11 +47,8 @@ exports.fetchAllProducts = async (req, res) => {
 exports.fetchProductsById = async (req, res) => {
   try {
     const id = req.params.id;
-    
     const product = await Product.findById(id).exec();
-
     if (!product) return res.status(404).json({ error: "product not found" });
-    console.log(product);
     res.status(200).json(product);
   } catch (err) {
     res.status(400).json(err.message);

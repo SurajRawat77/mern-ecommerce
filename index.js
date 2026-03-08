@@ -190,4 +190,7 @@ async function main() {
 }
 
 
-module.exports = server;
+// module.exports = server;
+server.listen(3001,()=>{
+  console.log("server is running");
+})
