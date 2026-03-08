@@ -69,9 +69,15 @@ server.get("/test",(req,res)=>{
   res.send("server is working!");
 })
 server.use(express.static(path.join(__dirname,"dist")));
-server.get("*",(req,res)=>{
-  res.sendFile(path.join(__dirname,"dist","index.html"))
-})
+// root route
+server.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
+
+// React router fallback
+server.get("/*", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
 
 
 
