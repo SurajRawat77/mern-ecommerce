@@ -26,14 +26,13 @@ const { User } = require("./model/user");
 
 const server = express();
 server.use(express.json());
-server.use(express.static(path.join(__dirname,"dist")));
 server.use(express.urlencoded({ extended: true }));
 server.use(cookieparser());
 
 server.use(
   cors({
     exposedHeaders: ["X-Total-Count"],
-    origin: "http://localhost:5173",
+    origin: true,
     credentials: true,
   }),
 );
@@ -66,6 +65,7 @@ server.use("/auth", authRouter.router);
 server.use("/cart", isAuth, cartRouter.router);
 server.use("/orders", isAuth, orderRouter.router);
 
+server.use(express.static(path.join(__dirname,"dist")));
 server.get("*",(req,res)=>{
   res.sendFile(path.join(__dirname,"dist","index.html"))
 })
@@ -178,6 +178,5 @@ async function main() {
   }
 }
 
-server.listen(3000, () => {
-  console.log("server started at 3000 port");
-});
+
+module.exports = server;
