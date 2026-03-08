@@ -1,0 +1,33 @@
+{
+  "name": "mern-ecommercer-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node --watch index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "connect-sqlite3": "^0.9.16",
+    "cookie-parser": "^1.4.7",
+    "cookies-parser": "^1.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.3.1",
+    "express": "^5.1.0",
+    "express-session": "^1.18.1",
+    "json": "^11.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "local": "^0.3.3",
+    "mongoose": "^8.16.1",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
+    "token": "^0.1.0",
+    "web": "^0.0.2"
+  }
+}
