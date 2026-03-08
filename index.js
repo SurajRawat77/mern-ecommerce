@@ -66,7 +66,7 @@ server.use("/cart", isAuth, cartRouter.router);
 server.use("/orders", isAuth, orderRouter.router);
 
 server.use(express.static(path.join(__dirname,"dist")));
-server.get("*",(req,res)=>{
+server.get("/*/",(req,res)=>{
   res.sendFile(path.join(__dirname,"dist","index.html"))
 })
 
