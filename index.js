@@ -26,7 +26,7 @@ const { User } = require("./model/user");
 
 const server = express();
 server.use(express.json());
-server.use(express.static(path.resolve(__dirname,"dist")));
+server.use(express.static(path.join(__dirname,"dist")));
 server.use(express.urlencoded({ extended: true }));
 server.use(cookieparser());
 
@@ -65,6 +65,10 @@ server.use("/users",isAuth, userRouter.router);
 server.use("/auth", authRouter.router);
 server.use("/cart", isAuth, cartRouter.router);
 server.use("/orders", isAuth, orderRouter.router);
+
+server.get("*",(req,res)=>{
+  res.sendFile(path.join(__dirname,"dist","index.html"))
+})
 
 // Passport Strategies yeah generally kis trh se login ko check kiya jaaye uske liye hota hain.
 // npm install passport-local to install local strategy.
