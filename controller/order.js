@@ -1,10 +1,17 @@
 const { Order } = require("../model/order");
+const { invoiceTemplate,sendMail } = require("../services/common");
+
 
 exports.addToOrder = async (req, res) => {
   try {
-    const order = new Order(req.body);
+    const order = new Order(req.body); 
     const doc = await order.save();
-    const result = await doc.populate("user");
+    const result = (await doc.populate("user"));
+    console.log(result.items);
+    const subject = "Order Receipt"
+    const html = invoiceTemplate(result);
+    const res = await sendMail({to:result.user.email,subject,html})
+    console.log(result);
     res.status(201).json(result);
   } catch (err) {
     res.status(400).json({ err: err.message });

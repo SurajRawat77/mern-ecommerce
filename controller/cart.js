@@ -1,7 +1,7 @@
 const { Cart } = require("../model/cart");
 
 exports.addToCart = async (req, res) => {
-  const { id } = req.user;
+  const { id } = req.user; 
   try {
     const cart = new Cart({
       product: req.body.product,
@@ -35,11 +35,11 @@ exports.deleteItemfromCart = async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
   try {
-    const doc = await Cart.findByIdAndDelete({_id:id,user:userId});
-    if(!doc) res.status(404).json({message:"Cart item not found"})
-    res.status(200).json(doc);
+    const doc = await Cart.findByIdAndDelete({ _id: id, user: userId });
+    if (!doc) res.status(404).json({ message: "Cart item not found" });
+    return res.status(200).json(doc);
   } catch (err) {
-    res.status(400).json(err);
+    return res.status(400).json(err);
   }
 };
 
@@ -60,11 +60,11 @@ exports.deleteItemfromCart = async (req, res) => {
 
 exports.updateCart = async (req, res) => {
   const { productId } = req.params; // you pass productId in the URL
-  const {id} = req.user;
+  const { id } = req.user;
   try {
     const updatedCartItem = await Cart.findOneAndUpdate(
-      { product: productId,user:id }, // query condition
-      {quantity:req.body.quantity}, // update payload (e.g., quantity)
+      { product: productId, user: id }, // query condition
+      { quantity: req.body.quantity }, // update payload (e.g., quantity)
       { new: true }, // return updated document
     ).populate("product");
 
@@ -75,6 +75,24 @@ exports.updateCart = async (req, res) => {
     }
 
     res.status(200).json(updatedCartItem);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+exports.resetCart = async (req, res) => {
+  const { id } = req.user;
+  try {
+    const deletedItem = await Cart.deleteMany({ user: id });
+
+    if (deletedItem.deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart already empty",
+      });
+    }
+
+    return res.status(200).json(deletedItem);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

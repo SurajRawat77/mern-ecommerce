@@ -2,7 +2,6 @@ const { User } = require("../model/user");
 
 exports.fetchUserById = async (req, res) => {
   const { id } = req.user;
-  // console.log("user controller", id);
   try {
     const user = await User.findById(id).exec();
     if (!user) return res.status(404).json({ error: "user not found" });
@@ -33,8 +32,6 @@ exports.updateUser = async (req, res) => { // this is updated version of updateU
   const { id } = req.user;
   const allowedFields = ["name", "addresses"];
   const updates = {};
-  console.log(id);
-
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) {
       updates[field] = req.body[field];
@@ -48,7 +45,7 @@ exports.updateUser = async (req, res) => { // this is updated version of updateU
       updates,
       { new: true, runValidators: true }
     );
-     console.log(user);
+     
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }

@@ -10,7 +10,7 @@ const orderSchema = new Schema({
     user:{type:Schema.Types.ObjectId,required:true,ref:"User"},
     selectedAddress:{type:Schema.Types.Mixed,required:true}
 
-})
+},{timestamps:true})
 
 const virtual = orderSchema.virtual("id");
 

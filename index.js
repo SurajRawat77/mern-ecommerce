@@ -7,6 +7,7 @@ const userRouter = require("./router/user");
 const authRouter = require("./router/auth");
 const cartRouter = require("./router/cart");
 const orderRouter = require("./router/order");
+const paymentRouter = require("./router/payment");
 const cookieparser = require("cookie-parser");
 const session = require("express-session");
 const crypto = require("crypto");
@@ -21,8 +22,6 @@ const dotenv = require("dotenv").config();
 
 const cors = require("cors");
 const { User } = require("./model/user");
-
-
 
 const server = express();
 server.use(express.json());
@@ -64,9 +63,10 @@ server.use("/users",isAuth, userRouter.router);
 server.use("/auth", authRouter.router);
 server.use("/cart", isAuth, cartRouter.router);
 server.use("/orders", isAuth, orderRouter.router);
+server.use("/payment", isAuth, paymentRouter.router);
 
 server.get("/test",(req,res)=>{
-  res.send("server is working!");
+  res.send("server is working!"); 
 })
 server.use(express.static(path.join(__dirname,"dist")));
 // root route
@@ -191,6 +191,6 @@ async function main() {
 
 
 // module.exports = server;
-server.listen(3001,()=>{
+server.listen(3000,()=>{
   console.log("server is running");
 })

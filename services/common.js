@@ -1,5 +1,17 @@
 const passport = require("passport");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
+const dotenv = require("dotenv").config();
+
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // Use true for port 465, false for port 587
+  auth: {
+    user: "rawatsuraj1079@gmail.com",
+    pass: process.env.MAil_PASS,
+  },
+});
 
 exports.isAuth = (req, res, next) => {
   try {
@@ -11,21 +23,181 @@ exports.isAuth = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.SECRET_KEY); // this will verify the token and return the decoded payload which has user id and role in it if token is valid otherwise it will throw error if token is invalid or expired.
     req.user = decoded; // we will attach the decoded payload to req.user so that we can access user id and role in protected route handler.
     next();
-
   } catch (err) {
     res.status(401).json({ message: "Invalid or expired token" });
   }
 };
 
-exports.sanitizeUser = (user)=>{// this function is used to remove sensitive information from user object before sending it to client or storing it in session or creating jwt token. like password and salt.
-    return {id:user.id,role:user.role}
-
-}
-exports.cookieExtractor = function(req) {
-  console.log("cookies:",req.cookies)
-    var token = null;
-    if (req && req.cookies) {
-        token = req.cookies['jwt'];
-    }
-    return token;
+exports.sanitizeUser = (user) => {
+  // this function is used to remove sensitive information from user object before sending it to client or storing it in session or creating jwt token. like password and salt.
+  return { id: user.id, role: user.role };
 };
+exports.cookieExtractor = function (req) {
+  console.log("cookies:", req.cookies);
+  var token = null;
+  if (req && req.cookies) {
+    token = req.cookies["jwt"];
+  }
+  return token;
+};
+
+exports.sendMail = async function ({ to, subject, html }) {
+  let info = await transporter.sendMail({
+    from: '"E-commerce" <rawatsuraj1079@gmail.com',
+    to,
+    subject,
+    html,
+  });
+  return info;
+};
+
+exports.invoiceTemplate = function (result) {
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Order Confirmation</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f4; font-family: Arial, sans-serif;">
+
+  <table align="center" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; margin-top:20px; border:1px solid #ddd;">
+    
+    <!-- Header -->
+    <tr>
+      <td style="padding:30px;">
+        <h1 style="margin:0; font-size:26px; color:#000;">Thank you for your order!</h1>
+        <p style="color:#555; font-size:14px; line-height:1.6;">
+          Here is a summary of your recent order. If you have any questions or concerns
+          about your order, please 
+          <a href="rawatsuraj1079@gmail.com" style="color:#007bff; text-decoration:none;">contact us</a>.
+        </p>
+      </td>
+    </tr>
+
+    <!-- Order Number -->
+    <tr>
+      <td style="background:#d6ccc2; padding:12px 30px; font-weight:bold;">
+        <span>${result.id}</span>
+        <span style="float:right;">0000224</span>
+      </td>
+    </tr>
+
+    <!-- Items -->
+    <tr>
+      <td style="padding:20px 30px;">
+        <table width="100%" style="font-size:14px; color:#333;">
+          ${result.items?.map((item,index)=>{
+            `<tr>
+            <td>${item.product.title}</td>
+            <td align="right">${item.product.price}</td>
+            <td>${item.quantity}</td>
+          </tr>`
+          })}
+          <tr>
+            <td>Shipping</td>
+            <td align="right">$6.00</td>
+          </tr>
+          <tr>
+            <td>Sales Tax</td>
+            <td align="right">$0.00</td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td colspan="2">
+              <hr style="border:none; border-top:1px dashed #ccc; margin:15px 0;">
+            </td>
+          </tr>
+
+          <!-- Total -->
+          <tr style="font-weight:bold;">
+            <td>Total</td>
+            <td align="right">${result.totalPrice}</td>
+          </tr>
+
+          <tr>
+            <td colspan="2">
+              <hr style="border:none; border-top:1px dashed #ccc; margin:15px 0;">
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Addresses -->
+    <tr>
+      <td style="padding:20px 30px;">
+        <table width="100%">
+          <tr>
+            <!-- Delivery Address -->
+            <td width="50%" valign="top">
+              <strong>Delivery Address</strong>
+              <p style="margin-top:8px; font-size:14px; color:#333; line-height:1.6;">
+               ${result.selectedAddress?.name}<br>
+               ${result.selectedAddress.phone}<br>
+               ${result.selectedAddress.street}<br>
+               ${result.selectedAddress.city}<br>
+               ${result.selectedAddress.state}<br>
+               ${result.selectedAddress.pincode}
+
+              </p>
+            </td>
+
+            <!-- Billing Address -->
+            <td width="50%" valign="top">
+              <strong>Billing Address</strong>
+              <p style="margin-top:8px; font-size:14px; color:#333; line-height:1.6;">
+                billingAddress
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+  </table>
+
+</body>
+</html>`;
+};
+
+
+// {
+//   items: [
+//     {
+//       quantity: 1,
+//       product: [Object],
+//       user: '69a572f47a4c77b0f79a5ef6',
+//       id: '69b96924729918f325620926'
+//     }
+//   ],
+//   totalPrice: 13,
+//   totalCount: 1,
+//   status: 'pending',
+//   paymentMode: 'cash',
+//   user: {
+//     _id: new ObjectId('69a572f47a4c77b0f79a5ef6'),
+//     email: 'rawatsuraj1079@gmail.com',
+//     password: '006ab99956841d42e713b90e70e081893d7de1228d2689c6e9883e31b1aa02cb',
+//     role: 'user',
+//     addresses: [ [Object], [Object] ],
+//     orders: [],
+//     salt: Binary.createFromBase64('5V7swPipK8LI4yjX9PoLzg==', 0),    
+//     __v: 0,
+//     resetPasswordToken: '38ee8b3f741ed378aa5f5e767d32a3ec28d66bb304abb225d428525978b15b49'
+//   },
+//   selectedAddress: {
+//     name: 'Suraj Rawat',
+//     email: 'rawatsuraj1079@gmail.com',
+//     phone: '1234567890',
+//     street: 'mklrflrf;erfr',
+//     city: 'loni',
+//     state: 'up',
+//     pincode: 'ertgvcxfv'
+//   },
+//   _id: new ObjectId('69b96950729918f32562092b'),
+//   createdAt: 2026-03-17T14:46:40.384Z,
+//   updatedAt: 2026-03-17T14:46:40.384Z,
+//   __v: 0
+// }
