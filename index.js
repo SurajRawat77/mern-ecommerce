@@ -191,6 +191,8 @@ async function main() {
 
 
 // module.exports = server;
-server.listen(3000,()=>{
-  console.log("server is running");
-})
+
+// this is for testing and should be commented before deploy in vercel
+// server.listen(3000,()=>{
+//   console.log("server is running");
+// })
