@@ -190,7 +190,7 @@ async function main() {
 }
 
 
-// module.exports = server;
+module.exports = server;
 
 // this is for testing and should be commented before deploy in vercel
 // server.listen(3000,()=>{
