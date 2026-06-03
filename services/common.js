@@ -3,13 +3,14 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const dotenv = require("dotenv").config();
 
+/*creation of transporter */
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 587,
   secure: false, // Use true for port 465, false for port 587
   auth: {
     user: "rawatsuraj1079@gmail.com",
-    pass: process.env.MAil_PASS,
+    pass: process.env.MAIL_PASS,
   },
 });
 
@@ -43,7 +44,7 @@ exports.cookieExtractor = function (req) {
 
 exports.sendMail = async function ({ to, subject, html }) {
   let info = await transporter.sendMail({
-    from: '"E-commerce" <rawatsuraj1079@gmail.com',
+    from: '"E-commerce" <rawatsuraj1079@gmail.com>',
     to,
     subject,
     html,
@@ -161,43 +162,3 @@ exports.invoiceTemplate = function (result) {
 </body>
 </html>`;
 };
-
-
-// {
-//   items: [
-//     {
-//       quantity: 1,
-//       product: [Object],
-//       user: '69a572f47a4c77b0f79a5ef6',
-//       id: '69b96924729918f325620926'
-//     }
-//   ],
-//   totalPrice: 13,
-//   totalCount: 1,
-//   status: 'pending',
-//   paymentMode: 'cash',
-//   user: {
-//     _id: new ObjectId('69a572f47a4c77b0f79a5ef6'),
-//     email: 'rawatsuraj1079@gmail.com',
-//     password: '006ab99956841d42e713b90e70e081893d7de1228d2689c6e9883e31b1aa02cb',
-//     role: 'user',
-//     addresses: [ [Object], [Object] ],
-//     orders: [],
-//     salt: Binary.createFromBase64('5V7swPipK8LI4yjX9PoLzg==', 0),    
-//     __v: 0,
-//     resetPasswordToken: '38ee8b3f741ed378aa5f5e767d32a3ec28d66bb304abb225d428525978b15b49'
-//   },
-//   selectedAddress: {
-//     name: 'Suraj Rawat',
-//     email: 'rawatsuraj1079@gmail.com',
-//     phone: '1234567890',
-//     street: 'mklrflrf;erfr',
-//     city: 'loni',
-//     state: 'up',
-//     pincode: 'ertgvcxfv'
-//   },
-//   _id: new ObjectId('69b96950729918f32562092b'),
-//   createdAt: 2026-03-17T14:46:40.384Z,
-//   updatedAt: 2026-03-17T14:46:40.384Z,
-//   __v: 0
-// }

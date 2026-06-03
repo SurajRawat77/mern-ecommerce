@@ -1,15 +1,24 @@
 const { Cart } = require("../model/cart");
 
 exports.addToCart = async (req, res) => {
-  const { id } = req.user; 
+  const { id:userId } = req.user; 
+  const{product:productId, quantity} = req.body;
   try {
-    const cart = new Cart({
-      product: req.body.product,
-      quantity: req.body.quantity,
-      user: id,
+    let cartItem =  await Cart.findOne({user:userId,product:productId});
+    if(cartItem){
+      cartItem.quantity = cartItem.quantity + quantity;
+      await cartItem.save();
+    }
+    else{
+      cartItem = new Cart({
+      product: productId,
+      quantity: quantity,
+      user: userId,
     });
-    const doc = await cart.save();
-    const result = await doc.populate("product");
+    await cartItem.save();
+    }
+    
+    const result = await cartItem.populate("product");
 
     res.status(201).json(result);
   } catch (err) {
@@ -59,7 +68,7 @@ exports.deleteItemfromCart = async (req, res) => {
 // }
 
 exports.updateCart = async (req, res) => {
-  const { productId } = req.params; // you pass productId in the URL
+  const productId  = req.params.id; // you pass productId in the URL
   const { id } = req.user;
   try {
     const updatedCartItem = await Cart.findOneAndUpdate(

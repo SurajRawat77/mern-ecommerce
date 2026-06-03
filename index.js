@@ -28,13 +28,17 @@ server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
 server.use(cookieparser());
 
+/*for Production */ 
+// it will work with both in production and development phase.
 server.use(
   cors({
     exposedHeaders: ["X-Total-Count"],
-    origin: true,
     credentials: true,
+    origin:true
+    
   }),
 );
+//server.use(cors()) // it works only when we are developing our app.
 
 server.use(
   session({
@@ -194,5 +198,5 @@ module.exports = server;
 
 // this is for testing and should be commented before deploy in vercel
 // server.listen(3000,()=>{
-//   console.log("server is running");
+//   console.log(`server is running at 3000`);
 // })

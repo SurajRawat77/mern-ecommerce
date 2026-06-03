@@ -1,20 +1,37 @@
 const { Order } = require("../model/order");
 const { invoiceTemplate,sendMail } = require("../services/common");
 
-
 exports.addToOrder = async (req, res) => {
   try {
     const order = new Order(req.body); 
     const doc = await order.save();
-    const result = (await doc.populate("user"));
-    console.log(result.items);
-    const subject = "Order Receipt"
-    const html = invoiceTemplate(result);
-    const res = await sendMail({to:result.user.email,subject,html})
-    console.log(result);
+    
+    // 2. Populate user fields (specifically making sure 'email' is fetched)
+    const result = await doc.populate("user", "name email");
     res.status(201).json(result);
+
+    // 4. Handle email delivery in the background so it doesn't slow down checkout
+    // Wrapping it in its own try/catch ensures an email failure won't rollback a successful payment!
+    if (result.user && result.user.email) {
+      try {
+        const subject = "Order Receipt";
+        const html = invoiceTemplate(result);
+        
+        // FIX: Renamed variable to 'mailResponse' to avoid clashing with Express 'res'
+        const mailResponse = await sendMail({ 
+          to: result.user.email, 
+          subject, 
+          html 
+        });
+        
+      } catch (mailErr) {
+        console.error("Order saved, but email notification failed to send:", mailErr.message);
+      }
+    }
+
   } catch (err) {
-    res.status(400).json({ err: err.message });
+    // Safely capture validation or database constraints errors
+    res.status(400).json({ error: err.message });
   }
 };
 
@@ -32,9 +49,12 @@ exports.updateOrder = async (req, res) => {
 };
 
 exports.fetchOrdersByUser = async (req, res) => {
-  const { user } = req.params; // it has id as a value of user.
+  // const { user } = req.params; // it has id as a value of user. 
+  // we have to remove above line because we are not sending id in the url now.
+  const user = req.user.id;
   try {
     const orders = await Order.find({ user: user }).populate("user");
+    console.log(orders);
     res.status(200).json(orders);
   } catch (err) {
     res.status(400).json(err);

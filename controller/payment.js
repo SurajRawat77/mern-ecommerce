@@ -3,7 +3,6 @@ const crypto = require("crypto");
 const dotenv = require("dotenv").config();
 const {Order} = require("../model/order")
 exports.createOrder = async (req, res) => {
-
   try {
     const options = {
       amount: req.body.amount * 100, // paise
@@ -11,7 +10,7 @@ exports.createOrder = async (req, res) => {
       receipt: "receipt_" + Date.now(),
     };
 
-    const order = await razorpay.orders.create(options);
+    const order = await razorpay.orders.create(options); // order contains order.id
     res.json(order);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -25,9 +24,7 @@ exports.verifyOrder = async (req, res) => {
     razorpay_signature,
     placedData,
   } = req.body;
-  // console.log("Received:", razorpay_signature);
   
-
   const body = razorpay_order_id + "|" + razorpay_payment_id;
   const expectedSignature = crypto
     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)

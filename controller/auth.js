@@ -4,51 +4,61 @@ const crypto = require("crypto"); // it is inbuilt node module.
 const { sanitizeUser, sendMail } = require("../services/common");
 const jwt = require("jsonwebtoken");
 
-exports.createUser = async (req, res) => {
-  // this function is used to create user and it is called when we hit /signup route and it will hash the password and save user to database and then create a session for that user and also create a jwt token and send it to client in cookie.
+const util = require('util');
+// Turn pbkdf2 into a version that works with async/await
+const pbkdf2Promise = util.promisify(crypto.pbkdf2);
 
+exports.createUser = async (req, res) => {
   try {
+    // 1. Check for existing user
     const existingUser = await User.findOne({ email: req.body.email }).exec();
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
-    var salt = crypto.randomBytes(16);
-    // for hashing password we will use pbkdf2 function of crypto module and it takes 6 parameters password, salt, iterations, keylen, digest and callback function and it will return hashed password in callback function.
-    crypto.pbkdf2(
+
+    // 2. Generate a secure salt
+    const salt = crypto.randomBytes(16);
+    
+    // 3. Await the hashing securely inside the try block! No callback needed.
+    const hashedPassword = await pbkdf2Promise(
       req.body.password,
       salt,
       310000,
       32,
-      "sha256",
-      async function (err, hashedPassword) {
-        if (err) {
-          return res.status(400).json(err);
-        }
-        const user = new User({
-          email: req.body.email,
-          password: hashedPassword.toString("hex"),
-          salt,
-        });
-        const doc = await user.save();
-        // this will create session for user and also create jwt token and send it to client in cookie.
-
-        const token = jwt.sign(sanitizeUser(doc), process.env.SECRET_KEY, {
-          expiresIn: "1h",
-        });
-
-        res.cookie("jwt", token, {
-          httpOnly: true,
-          maxAge: 1000 * 60 * 60, // 1 hour
-        });
-        res.status(201).json({
-          message: "User Created Successfully",
-          id: doc._id,
-          role: doc.role,
-        });
-      },
+      "sha256"
     );
+
+    // 4. Instantiate and save user
+    const user = new User({
+      email: req.body.email,
+      password: hashedPassword.toString("hex"),
+      salt,
+    });
+    
+    const doc = await user.save(); // Any DB error here will now be caught perfectly!
+
+    // 5. Generate and sign JWT token
+    const token = jwt.sign(sanitizeUser(doc), process.env.SECRET_KEY, {
+      expiresIn: "1h",
+    });
+
+    // 6. Send the cookie and response
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production", // Matched to your logInUser settings!
+      maxAge: 1000 * 60 * 60, // 1 hour
+    });
+
+    res.status(201).json({
+      message: "User Created Successfully",
+      id: doc._id,
+      role: doc.role,
+    });
+
   } catch (err) {
-    res.status(400).json(err);
+    // Captures duplicate check errors, hashing errors, and database save errors flawlessly.
+    res.status(400).json({ message: err.message || err });
   }
 };
 exports.logInUser = (req, res) => {
@@ -62,7 +72,7 @@ exports.logInUser = (req, res) => {
     .cookie("jwt", token, {
       httpOnly: true,
       sameSite: "lax",
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       maxAge: 1000 * 60 * 60,
     })
     .json({
@@ -90,26 +100,39 @@ exports.logOutUser = (req, res) => {
 };
 
 exports.resetPasswordRequest = async (req, res) => {
-  const email = req.body.email;
-  const user = await User.findOne({ email: email });
+  const { email } = req.body; 
 
-  if (user) {
+  try {
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(200).json({ message: "If an account exists, a reset link has been sent." });
+    }
+
     const token = crypto.randomBytes(32).toString("hex");
     user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 mins expiration
     await user.save();
 
-    const resetPageLink =
-      "http://localhost:5173/reset-password?token=" + token + "&email=" + email;
-    const subject = "reset password for e-commerce";
-    const html = `<p>click <a href='${resetPageLink}'>here<a/> to reset password </p>`;
-    if (email) {
-      sendMail({ to: email, subject, html });
-      res.status(200).json({
-        message: "Reset email sent successfully",
-      });
-    } else {
-      res.sendStatus(400);
-    }
+    // 💡 THE MAGIC TRICK FOR STATICALLY HOSTED FRONTENDS:
+    // req.protocol gets "http" or "https"
+    // req.get('host') gets "localhost:8080" in dev OR "your-store.com" in production
+    const hostUrl = `${req.protocol}://${req.get('host')}`;
+    const resetPageLink = `${hostUrl}/reset-password?token=${token}&email=${email}`;
+    
+    const subject = "Reset password for e-commerce";
+    const html = `<p>Click <a href='${resetPageLink}'>here</a> to reset your password. This link expires in 15 minutes.</p>`;
+    
+    await sendMail({ to: email, subject, html });
+
+    res.status(200).json({ message: "Reset email sent successfully" });
+
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error", error: err.message });
   }
 };
 
@@ -117,7 +140,6 @@ exports.resetPassword = async (req, res) => {
   // req contains a object of email token newpassword
   const { email, token, newPassword } = req.body;
   const user = await User.findOne({ email: email, resetPasswordToken: token });
-  console.log(newPassword);
   if (user) {
     var salt = crypto.randomBytes(16);
     // for hashing password we will use pbkdf2 function of crypto module and it takes 6 parameters password, salt, iterations, keylen, digest and callback function and it will return hashed password in callback function.
